@@ -1,11 +1,25 @@
 open React;
 
 let useInterval = (fn: unit => unit, interval: int) => {
-  useEffect2(
+  let cbRef: React.Ref.t(Js.Nullable.t(unit => unit)) =
+    useRef(Js.Nullable.null);
+
+  useEffect1(
     () => {
-      let timer = Js.Global.setInterval(fn, interval);
-      Some(() => Js.Global.clearInterval(timer));
+      React.Ref.setCurrent(cbRef, Js.Nullable.return(fn));
+      None;
     },
-    (fn, interval),
+    [|fn|],
+  );
+
+  useEffect1(
+    () =>
+      switch (cbRef->Ref.current->Js.Nullable.toOption) {
+      | Some(fn) =>
+        let timer = Js.Global.setInterval(fn, interval);
+        Some(() => Js.Global.clearInterval(timer));
+      | _ => None
+      },
+    [|interval|],
   );
 };
